@@ -1,57 +1,56 @@
 from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QTextBrowser, QLineEdit, QPushButton, QTimeEdit, QLCDNumber, \
-    QRadioButton
+    QRadioButton  # Importiert alle benötigten Widgets
 
-
-class CentralWidget(QWidget):
+class CentralWidget(QWidget):  # Haupt-UI-Element der Anwendung
     def __init__(self, parent=None):
-        super(CentralWidget, self).__init__(parent)
+        super(CentralWidget, self).__init__(parent)  # Aufruf des Eltern-Konstruktors
 
-        grid_layout = QGridLayout()
+        grid_layout = QGridLayout()  # Raster-Layout für die Anordnung aller Widgets
 
-        label1 = QLabel("Blind in €")
+        # --- Beschriftungen ---
+        label1 = QLabel("Blind in €")  # Label für erstes Eingabefeld
         grid_layout.addWidget(label1, 1, 1)
 
-        label2 = QLabel("Raise-Time")
+        label2 = QLabel("Raise-Time")  # Zeitintervall (wie oft die Blinds steigen)
         grid_layout.addWidget(label2, 2, 1)
 
-        label_3 = QLabel("Raise in %")
+        label_3 = QLabel("Raise in %")  # Prozentuale Erhöhung der Blinds
         grid_layout.addWidget(label_3, 3, 1)
 
-        label_4= QLabel("Blind in €")
+        label_4 = QLabel("Blind in €")  # Zweites Blind-Feld (z. B. Big Blind)
         grid_layout.addWidget(label_4, 4, 1)
 
-        self.line_edit_1 = QLineEdit("50")
+        # --- Eingabefelder ---
+        self.line_edit_1 = QLineEdit("50")  # Eingabe für Small Blind
         grid_layout.addWidget(self.line_edit_1, 1, 2)
 
-        self.line_edit_2 = QTimeEdit()
+        self.line_edit_2 = QTimeEdit()  # Zeit-Eingabe für Raise-Intervall
         grid_layout.addWidget(self.line_edit_2, 2, 2)
 
-        self.line_edit_3 = QLineEdit("15.3%")
+        self.line_edit_3 = QLineEdit("15.3%")  # Prozentuale Erhöhung
         grid_layout.addWidget(self.line_edit_3, 3, 2)
 
-        self.line_edit_4 = QLineEdit("50")
+        self.line_edit_4 = QLineEdit("50")  # Eingabe für Big Blind
         grid_layout.addWidget(self.line_edit_4, 4, 2)
 
-        self.push_button = QPushButton("Start/Stopp")
+        # --- Start/Stopp-Button ---
+        self.push_button = QPushButton("Start/Stopp")  # Timer starten oder stoppen
         grid_layout.addWidget(self.push_button, 1, 3)
 
-        lcd_timer = QLCDNumber()
-        lcd_timer.display(0)
+        # --- Timer-Anzeige (LCD-Stil) ---
+        lcd_timer = QLCDNumber()  # Digitale Anzeige z. B. für Countdown
+        lcd_timer.display(0)  # Startwert = 0
         grid_layout.addWidget(lcd_timer, 2, 3)
 
-        self.radio_button = QRadioButton("Raise in %")
+        # --- Auswahl Buttons für Erhöhungsart ---
+        self.radio_button = QRadioButton("Raise in %")  # Option für prozentuale Erhöhung
         grid_layout.addWidget(self.radio_button, 3, 3)
 
-        self.radio_button_2 = QRadioButton("Raise in €")
+        self.radio_button_2 = QRadioButton("Raise in €")  # Option für absolute Erhöhung
         grid_layout.addWidget(self.radio_button_2, 4, 3)
 
+        # --- Textausgabe / Verlauf ---
+        self.text_browser = QTextBrowser()  # Großer Textbereich zur Anzeige von Infos
+        grid_layout.addWidget(self.text_browser, 5, 1, 1, 4)  # über 4 Spalten
 
-
-
-
-
-        self.text_browser = QTextBrowser()
-        grid_layout.addWidget(self.text_browser, 5, 1, 1, 4)
-
-        self.setLayout(grid_layout)
-
+        self.setLayout(grid_layout)  # Layout anwenden auf das zentrale Widget
