@@ -1,60 +1,62 @@
-from PyQt6.QtCharts import QChartView, QChart, QLineSeries, QDateTimeAxis, QValueAxis
-from PyQt6.QtCore import Qt, QDateTime, QTimer, pyqtSlot
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtCharts import QChartView, QChart, QLineSeries, QDateTimeAxis, QValueAxis  # Chart-Komponenten
+from PyQt6.QtCore import Qt, QDateTime, QTimer, pyqtSlot  # Qt-Basisfunktionen, Datum, Timer, Slot-Dekorator
+from PyQt6.QtGui import QMouseEvent  # Für Mausereignisse
 
 
-class CentralWidget(QChartView):
+class CentralWidget(QChartView):  # Zentrales Widget, das das Diagramm anzeigt
     def __init__(self, parent=None):
-        super(CentralWidget, self).__init__(parent)
+        super(CentralWidget, self).__init__(parent)  # Konstruktor der Elternklasse aufrufen
 
-        self.__timer = QTimer()
-        self.__timer.timeout.connect(self.changeAxisRange)
+        self.__timer = QTimer()  # Timer-Objekt erstellen
+        self.__timer.timeout.connect(self.changeAxisRange)  # Timer verbindet sich mit Methode zur Achsenaktualisierung
 
-        self.__series = QLineSeries()
-        self.__series.setName("Goldpreisentwicklung in $")
+        self.__series = QLineSeries()  # Datenreihe für den Graphen
+        self.__series.setName("Goldpreisentwicklung in $")  # Name für die Legende
 
-        self.__axis_x = QDateTimeAxis()
-        self.__axis_x.setTitleText("Datum")
-        self.__axis_x.setFormat("hh:mm:ss")
-        self.__axis_x.setMin(QDateTime.currentDateTime().addSecs(-60 * 10))
+        self.__axis_x = QDateTimeAxis()  # X-Achse als Zeitachse
+        self.__axis_x.setTitleText("Datum")  # Beschriftung der X-Achse
+        self.__axis_x.setFormat("hh:mm:ss")  # Anzeigeformat
+        self.__axis_x.setMin(QDateTime.currentDateTime().addSecs(-60 * 10))  # Start: 10 Minuten vor aktueller Zeit
 
-        self.changeAxisRange()
+        self.changeAxisRange()  # Setzt initial das Ende der Achse auf "jetzt + 10 Minuten"
 
-        axis_dollar = QValueAxis()
-        axis_dollar.setTitleText("Goldpreis in $")
-        axis_dollar.setRange(1250, 2750)
+        axis_dollar = QValueAxis()  # Y-Achse als Zahlenachse
+        axis_dollar.setTitleText("Goldpreis in $")  # Beschriftung der Y-Achse
+        axis_dollar.setRange(1250, 2750)  # Wertebereich
 
-        self.__chart = QChart()
-        self.__chart.setTitle("Goldpreisentwicklung")
+        self.__chart = QChart()  # Neues Diagramm-Objekt
+        self.__chart.setTitle("Goldpreisentwicklung")  # Titel des Diagramms
 
+        # Achsen zum Diagramm hinzufügen
         self.__chart.addAxis(self.__axis_x, Qt.AlignmentFlag.AlignBottom)
         self.__chart.addAxis(axis_dollar, Qt.AlignmentFlag.AlignLeft)
 
-        self.__chart.addSeries(self.__series)
+        self.__chart.addSeries(self.__series)  # Datenreihe zum Diagramm hinzufügen
 
+        # Datenreihe mit den Achsen verbinden
         self.__series.attachAxis(self.__axis_x)
         self.__series.attachAxis(axis_dollar)
 
-        self.setChart(self.__chart)
+        self.setChart(self.__chart)  # Diagramm anzeigen
 
-        self.__timer.start(1000)
+        self.__timer.start(1000)  # Starte den Timer (alle 1000 ms = 1 Sekunde wird die X-Achse aktualisiert)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button().LeftButton:
+        if event.button().LeftButton:  # Nur bei linkem Mausklick
             event.accept()
 
+            # Klickposition wird in Datenwert umgerechnet (x = Zeit, y = Preis)
             new_value = self.__chart.mapToValue(event.pos().toPointF(), self.__series)
 
+            # Zeitlich korrekt einfügen (sortiert einfügen)
             for i in range(len(self.__series.points())):
                 if self.__series.at(i).x() > new_value.x():
-                    self.__series.insert(i, new_value)
-
+                    self.__series.insert(i, new_value)  # Punkt an richtiger Stelle einfügen
                     return
 
-            self.__series.append(new_value)
+            self.__series.append(new_value)  # Ansonsten ans Ende anhängen
 
-    @pyqtSlot()
+    @pyqtSlot()  # Dekorator für Slot-Methode (wird vom Timer aufgerufen)
     def changeAxisRange(self):
-        end_date = QDateTime.currentDateTime().addSecs(60 * 10)
-
-        self.__axis_x.setMax(end_date)
+        end_date = QDateTime.currentDateTime().addSecs(60 * 10)  # Neues Ende = 10 Minuten in der Zukunft
+        self.__axis_x.setMax(end_date)  # Achse aktualisieren
