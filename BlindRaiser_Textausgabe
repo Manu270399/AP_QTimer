@@ -1,44 +1,47 @@
-from PyQt6.QtCore import QTime, pyqtSlot, QTimer, Qt, QDateTime
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QTextBrowser, QLineEdit, QPushButton, QTimeEdit, QLCDNumber, \
-    QRadioButton
+from PyQt6.QtCore import QTime, pyqtSlot, QTimer, Qt, QDateTime  # Timer, Datum/Zeit, Slot-System
+from PyQt6.QtGui import QPixmap  # Für Bilder
+from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QTextBrowser, QLineEdit, QPushButton, QTimeEdit, QLCDNumber, QRadioButton  # GUI-Elemente
 
-
-class CentralWidget(QWidget):
+class CentralWidget(QWidget):  # Hauptfenster des Blind-Timers
     def __init__(self, parent=None):
         super(CentralWidget, self).__init__(parent)
 
-        self.__timer = QTimer()
+        self.__timer = QTimer()  # Timer wird jede Sekunde ausgelöst
         self.__timer.timeout.connect(self.decrease_sec)
 
-        self.__time_left = QTime()
+        self.__time_left = QTime()  # Countdown-Zeit
+        self.__blind = 0.0  # Aktueller Blind
+        self.__raise_in_percent = 0.0
+        self.__raise_in_euro = 0.0
+        self.__raise_by_percent = True  # Default
 
-        self.__line_edit_blind_euro = QLineEdit("50.00")
+        # --- Eingabeelemente ---
+        self.__line_edit_blind_euro = QLineEdit("50.00")  # Start-Blind
 
-        self.__time_edit = QTimeEdit(QTime(0, 0, 5))
+        self.__time_edit = QTimeEdit(QTime(0, 0, 5))  # Zeitintervall für Blind-Erhöhung
         self.__time_edit.setDisplayFormat("hh:mm:ss")
 
-        self.__line_edit_raise_percent = QLineEdit("15.3")
+        self.__line_edit_raise_percent = QLineEdit("15.3")  # Erhöhung in %
+        self.__line_edit_raise_euro = QLineEdit("10.00")    # Erhöhung in €
 
-        self.__line_edit_raise_euro = QLineEdit("10.00")
-
-        self.__push_button = QPushButton("Start")
+        self.__push_button = QPushButton("Start")  # Start/Stopp-Button
         self.__push_button.released.connect(self.timer_start)
 
-        self.__lcd_number = QLCDNumber()
+        self.__lcd_number = QLCDNumber()  # Digitale Anzeige der Restzeit
         self.__lcd_number.display(self.__time_edit.time().toString("hh:mm:ss"))
 
         self.__radio_button_percent = QRadioButton("Raise in %")
-        self.__radio_button_percent.setChecked(True)
+        self.__radio_button_percent.setChecked(True)  # Standardmäßig aktiviert
 
         self.__radio_button_euro = QRadioButton("Raise in €")
 
-        self.__text_browser = QTextBrowser()
+        self.__text_browser = QTextBrowser()  # Verlaufsanzeige / Log
 
-        self.__label = QLabel()
+        self.__label = QLabel()  # Bildanzeige (z. B. Pokerchip)
         self.__label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.__label.setPixmap(QPixmap("chip.jpg").scaledToWidth(100))
 
+        # --- Layout ---
         grid_layout = QGridLayout()
 
         grid_layout.addWidget(QLabel("Blind in €"), 1, 1)
@@ -59,70 +62,73 @@ class CentralWidget(QWidget):
 
         self.setLayout(grid_layout)
 
-        self.__text_browser.append("Ready")
+        self.__text_browser.append("Ready")  # Initialmeldung
 
     @pyqtSlot()
     def timer_start(self):
-        self.__push_button.setText("Stopp")
+        self.__push_button.setText("Stopp")  # Button-Beschriftung ändern
         self.__push_button.released.disconnect(self.timer_start)
         self.__push_button.released.connect(self.timer_stop)
 
+        # Eingaben deaktivieren
         self.__line_edit_blind_euro.setDisabled(True)
         self.__time_edit.setDisabled(True)
         self.__line_edit_raise_percent.setDisabled(True)
         self.__line_edit_raise_euro.setDisabled(True)
-
         self.__radio_button_euro.setDisabled(True)
         self.__radio_button_percent.setDisabled(True)
 
+        # Werte einlesen und vorbereiten
         self.__blind = float(self.__line_edit_blind_euro.text())
-        self.__raise_in_percent = 0.0
-        self.__raise_in_euro = 0.0
-
         self.__raise_by_percent = self.__radio_button_percent.isChecked()
+
         if self.__raise_by_percent:
             self.__raise_in_percent = (100.0 + float(self.__line_edit_raise_percent.text())) / 100.0
         else:
             self.__raise_in_euro = float(self.__line_edit_raise_euro.text())
 
-        self.__time_left = self.__time_edit.time()
-
-        self.__timer.start(1 * 1000)
-
-    @pyqtSlot()
-    def timer_stop(self):
-        self.__push_button.setText("Start")
-        self.__push_button.released.disconnect(self.timer_stop)
-        self.__push_button.released.connect(self.timer_start)
-
-        self.__line_edit_blind_euro.setEnabled(True)
-        self.__time_edit.setEnabled(True)
-        self.__line_edit_raise_percent.setEnabled(True)
-        self.__line_edit_raise_euro.setEnabled(True)
-
-        self.__radio_button_euro.setEnabled(True)
-        self.__radio_button_percent.setEnabled(True)
-
-        self.__lcd_number.display(self.__time_edit.time().toString("hh:mm:ss"))
-
-        self.__timer.stop()
-
     @pyqtSlot()
     def decrease_sec(self):
-        if self.__time_left == QTime(0, 0, 0):
-            self.__time_left = self.__time_edit.time()
+        if self.__time_left == QTime(0, 0, 0):  # Wenn Countdown abgelaufen ist
+            self.__time_left = self.__time_edit.time()  # Zurücksetzen auf Startzeit
 
+            # Blind erhöhen (entweder in Prozent oder fix)
             if self.__raise_by_percent:
                 self.__blind *= self.__raise_in_percent
             else:
                 self.__blind += self.__raise_in_euro
 
+            # Verlaufseintrag erstellen
             line = QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")
-            line += "%10.2f Euro"%(self.__blind)
-
+            line += "    %10.2f Euro" % (self.__blind)
             self.__text_browser.append(line)
 
-        self.__time_left = self.__time_left.addSecs(-1)
-        print(self.__time_left)
+        self.__time_left = self.__time_left.addSecs(-1)  # Eine Sekunde abziehen
+        print(self.__time_left)  # Debug-Ausgabe in Konsole (optional)
 
-        self.__lcd_number.display(self.__time_left.toString("hh:mm:ss"))
+        self.__lcd_number.display(self.__time_left.toString("hh:mm:ss"))  # Anzeige aktualisieren
+
+
+        self.__time_left = self.__time_edit.time()
+
+        self.__timer.start(1000)  # Timer jede Sekunde auslösen
+
+    @pyqtSlot()
+    def timer_stop(self):
+        self.__push_button.setText("Start")  # Button-Beschriftung zurücksetzen
+        self.__push_button.released.disconnect(self.timer_stop)
+        self.__push_button.released.connect(self.timer_start)
+
+        # Eingaben wieder freigeben
+        self.__line_edit_blind_euro.setEnabled(True)
+        self.__time_edit.setEnabled(True)
+        self.__line_edit_raise_percent.setEnabled(True)
+        self.__line_edit_raise_euro.setEnabled(True)
+        self.__radio_button_euro.setEnabled(True)
+        self.__radio_button_percent.setEnabled(True)
+
+        self.__lcd_number.display(self.__time_edit.time().toString("hh:mm:ss"))  # Reset der Anzeige
+
+        self.__timer.stop()  # Timer stoppen
+
+
