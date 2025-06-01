@@ -1,55 +1,63 @@
 from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextBrowser, QLineEdit, QPushButton, QComboBox
 
-
 class CentralWidget(QWidget):
     def __init__(self, parent=None):
         super(CentralWidget, self).__init__(parent)
 
-        self.dict_acquisition_types = dict()
-        self.dict_acquisition_types["Linear"] = self.linear
-        self.dict_acquisition_types["Degression"] = self.degression
-        self.dict_acquisition_types["Degression auf Linear"] = self.degression_to_linear
+        # Wörterbuch zur Auswahl der Abschreibungsart → verweist direkt auf die jeweilige Methode
+        self.dict_acquisition_types = {
+            "Linear": self.linear,
+            "Degression": self.degression,
+            "Degression auf Linear": self.degression_to_linear
+        }
 
+        # Layout vorbereiten
         box_layout = QVBoxLayout()
 
+        # Eingabe: Anschaffungswert
         box_layout.addWidget(QLabel("Anschaffungswert in Euro"))
-
         self.line_edit_acquisition_value = QLineEdit("50")
         box_layout.addWidget(self.line_edit_acquisition_value)
 
+        # Eingabe: Nutzungsdauer
         box_layout.addWidget(QLabel("Abschreibungsdauer in Jahren"))
-
         self.line_edit_acquisition_period = QLineEdit("4")
         box_layout.addWidget(self.line_edit_acquisition_period)
 
+        # Auswahl: Abschreibungsart
         box_layout.addWidget(QLabel("Abschreibungsart"))
-
         self.combo_box_acquisition_typ = QComboBox()
         for key in self.dict_acquisition_types.keys():
             self.combo_box_acquisition_typ.addItem(key)
         box_layout.addWidget(self.combo_box_acquisition_typ)
 
+        # Button: Berechnung starten
         self.push_button = QPushButton("Berechnen")
         self.push_button.released.connect(self.depreciation)
         box_layout.addWidget(self.push_button)
 
+        # Ausgabefeld: Anzeige der Abschreibungswerte
         self.text_browser = QTextBrowser()
         box_layout.addWidget(self.text_browser)
 
+        # Layout setzen
         self.setLayout(box_layout)
 
     @pyqtSlot()
     def depreciation(self):
+        # Ruft die Methode entsprechend der Auswahl in der ComboBox auf
         current_text = self.combo_box_acquisition_typ.currentText()
-
-        self.dict_acquisition_types[current_text]()
+        self.dict_acquisition_types[current_text]()  # Methode aufrufen
 
     def linear(self):
         self.text_browser.append("Lineare Abschreibung")
+        # Hier folgt später die konkrete Berechnung
 
     def degression(self):
         self.text_browser.append("Degressive Abschreibung")
+        # Hier folgt später die konkrete Berechnung
 
     def degression_to_linear(self):
         self.text_browser.append("Degressive auf lineare Abschreibung")
+        # Hier folgt später die konkrete Kombination beider Methoden
